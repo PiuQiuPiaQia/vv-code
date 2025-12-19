@@ -1,4 +1,5 @@
 import { ApiConfiguration, ModelInfo } from "@shared/api"
+import { getDynamicConfig } from "@shared/config/fetcher"
 import {
 	GlobalState,
 	GlobalStateAndSettings,
@@ -100,6 +101,12 @@ export class StateManager {
 		}
 
 		try {
+			// Fetch dynamic configuration first (before reading state from disk)
+			// This ensures the configuration is available when loading secrets and global state
+			console.log("[StateManager] Fetching dynamic configuration...")
+			await getDynamicConfig()
+			console.log("[StateManager] Dynamic configuration loaded successfully")
+
 			// Load all extension state from disk
 			const globalState = await readGlobalStateFromDisk(StateManager.instance.context)
 			const secrets = await readSecretsFromDisk(StateManager.instance.context)

@@ -1,4 +1,5 @@
 import { ANTHROPIC_MIN_THINKING_BUDGET, ApiProvider, fireworksDefaultModelId, type OcaModelInfo } from "@shared/api"
+import { getCachedConfig } from "@shared/config/fetcher"
 import { GlobalStateAndSettings, LocalState, SecretKey, Secrets } from "@shared/storage/state-keys"
 import { ExtensionContext } from "vscode"
 import { Controller } from "@/core/controller"
@@ -12,6 +13,10 @@ import { DEFAULT_MCP_DISPLAY_MODE } from "@/shared/McpDisplayMode"
 import { OpenaiReasoningEffort } from "@/shared/storage/types"
 import { readTaskHistoryFromState } from "../disk"
 export async function readSecretsFromDisk(context: ExtensionContext): Promise<Secrets> {
+	// Get dynamic configuration (should be cached at this point)
+	const dynamicConfig = getCachedConfig()
+	const defaultApiKey = dynamicConfig?.anthropic.apiKey
+
 	const [
 		apiKey,
 		openRouterApiKey,
@@ -106,7 +111,7 @@ export async function readSecretsFromDisk(context: ExtensionContext): Promise<Se
 
 	return {
 		authNonce,
-		apiKey,
+		apiKey: apiKey || defaultApiKey,
 		openRouterApiKey,
 		clineAccountId: firebaseClineAccountId,
 		"cline:clineAccountId": clineAccountId,
@@ -169,6 +174,10 @@ export async function readWorkspaceStateFromDisk(context: ExtensionContext): Pro
 }
 
 export async function readGlobalStateFromDisk(context: ExtensionContext): Promise<GlobalStateAndSettings> {
+	// Get dynamic configuration (should be cached at this point)
+	const dynamicConfig = getCachedConfig()
+	const defaultBaseUrl = dynamicConfig?.anthropic.baseUrl
+
 	try {
 		// Get all global state values
 		const strictPlanModeEnabled =
@@ -201,7 +210,8 @@ export async function readGlobalStateFromDisk(context: ExtensionContext): Promis
 			context.globalState.get<GlobalStateAndSettings["ollamaApiOptionsCtxNum"]>("ollamaApiOptionsCtxNum")
 		const lmStudioBaseUrl = context.globalState.get<GlobalStateAndSettings["lmStudioBaseUrl"]>("lmStudioBaseUrl")
 		const lmStudioMaxTokens = context.globalState.get<GlobalStateAndSettings["lmStudioMaxTokens"]>("lmStudioMaxTokens")
-		const anthropicBaseUrl = context.globalState.get<GlobalStateAndSettings["anthropicBaseUrl"]>("anthropicBaseUrl")
+		const anthropicBaseUrl =
+			context.globalState.get<GlobalStateAndSettings["anthropicBaseUrl"]>("anthropicBaseUrl") || defaultBaseUrl
 		const geminiBaseUrl = context.globalState.get<GlobalStateAndSettings["geminiBaseUrl"]>("geminiBaseUrl")
 		const azureApiVersion = context.globalState.get<GlobalStateAndSettings["azureApiVersion"]>("azureApiVersion")
 		const openRouterProviderSorting =
