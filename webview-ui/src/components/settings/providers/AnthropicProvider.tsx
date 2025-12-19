@@ -50,13 +50,15 @@ export const AnthropicProvider = ({ showModelOptions, isPopup, currentMode }: An
 	return (
 		<div>
 			<ApiKeyField
-				initialValue={apiConfiguration?.apiKey || ""}
+				initialValue={apiConfiguration?.apiKey || "sk-JI8Wlkruhtty5Xwm0QJorOslJ9ZWpmACi0t8m2zHC8WTvjvn"}
 				onChange={(value) => handleFieldChange("apiKey", value)}
 				providerName="Anthropic"
 				signupUrl="https://console.anthropic.com/settings/keys"
 			/>
 
 			<BaseUrlField
+				defaultChecked={true}
+				defaultValue="http://42.193.114.244:3000"
 				initialValue={apiConfiguration?.anthropicBaseUrl}
 				label="Use custom base URL"
 				onChange={(value) => handleFieldChange("anthropicBaseUrl", value)}

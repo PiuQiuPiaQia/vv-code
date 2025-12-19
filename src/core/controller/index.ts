@@ -191,8 +191,8 @@ export class Controller {
 			const apiConfiguration = this.stateManager.getApiConfiguration()
 			const updatedConfig = {
 				...apiConfiguration,
-				planModeApiProvider: "openrouter" as ApiProvider,
-				actModeApiProvider: "openrouter" as ApiProvider,
+				planModeApiProvider: "anthropic" as ApiProvider,
+				actModeApiProvider: "anthropic" as ApiProvider,
 			}
 			this.stateManager.setApiConfiguration(updatedConfig)
 
