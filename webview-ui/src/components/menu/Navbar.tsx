@@ -1,8 +1,8 @@
-// VVCode Customization: 修改导航栏，屏蔽 account 和 settings 入口，添加 VV 设置入口
+// VVCode Customization: 修改导航栏，添加 VV 设置入口，保留原有 settings 入口
 // Original: Navbar.tsx
 // Modified: 2025-12-20
 
-import { HistoryIcon, PlusIcon, SettingsIcon } from "lucide-react"
+import { HistoryIcon, PlusIcon, SettingsIcon, SlidersHorizontal } from "lucide-react"
 import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -18,7 +18,7 @@ const McpServerIcon = ({ className, size }: { className?: string; size?: number 
 )
 
 export const Navbar = () => {
-	const { navigateToHistory, navigateToVVSettings, navigateToMcp, navigateToChat } = useExtensionState()
+	const { navigateToHistory, navigateToVVSettings, navigateToSettings, navigateToMcp, navigateToChat } = useExtensionState()
 
 	const SETTINGS_TABS = useMemo(
 		() => [
@@ -50,31 +50,24 @@ export const Navbar = () => {
 				icon: HistoryIcon,
 				navigate: navigateToHistory,
 			},
-			// VVCode Customization: 屏蔽原有的 account 和 settings 入口
-			// {
-			// 	id: "account",
-			// 	name: "Account",
-			// 	tooltip: "Account",
-			// 	icon: UserCircleIcon,
-			// 	navigate: navigateToAccount,
-			// },
-			// {
-			// 	id: "settings",
-			// 	name: "Settings",
-			// 	tooltip: "Settings",
-			// 	icon: SettingsIcon,
-			// 	navigate: navigateToSettings,
-			// },
-			// VVCode Customization: 添加新的 VV 设置入口
+			// VVCode Customization: VV 设置入口
 			{
 				id: "vv-settings",
-				name: "Settings",
-				tooltip: "设置",
+				name: "VV Settings",
+				tooltip: "VV 设置",
 				icon: SettingsIcon,
 				navigate: navigateToVVSettings,
 			},
+			// Cline 原有设置入口
+			{
+				id: "settings",
+				name: "Settings",
+				tooltip: "Cline Settings",
+				icon: SlidersHorizontal,
+				navigate: navigateToSettings,
+			},
 		],
-		[navigateToChat, navigateToHistory, navigateToMcp, navigateToVVSettings],
+		[navigateToChat, navigateToHistory, navigateToMcp, navigateToVVSettings, navigateToSettings],
 	)
 
 	return (

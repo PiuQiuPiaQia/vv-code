@@ -2,7 +2,7 @@
 // Created: 2025-12-20
 
 import { fetch } from "@/shared/net"
-import type { VVUserConfig, VVUserInfo } from "@/shared/storage/state-keys"
+import type { VVGroupConfig, VVUserConfig, VVUserInfo } from "@/shared/storage/state-keys"
 
 /**
  * VVCode 认证提供商
@@ -208,6 +208,64 @@ export class VVAuthProvider {
 			// 登出失败不阻塞流程
 			console.error("Logout API call failed:", error)
 		}
+	}
+
+	/**
+	 * 获取分组 Token 配置
+	 * @param accessToken 访问令牌
+	 * @param userId 用户 ID
+	 * @returns 分组配置列表
+	 */
+	async getGroupTokens(accessToken: string, userId: number): Promise<VVGroupConfig> {
+		const response = await fetch(`${this.apiBaseUrl}/oauth/vscode/group_tokens`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				"New-Api-User": userId.toString(),
+			},
+		})
+
+		if (!response.ok) {
+			const errorText = await response.text()
+			throw new Error(`Failed to get group tokens: ${errorText}`)
+		}
+
+		const result = await response.json()
+
+		console.log("getGroupTokens", result)
+		if (!result.success) {
+			throw new Error(result.message || "Failed to get group tokens")
+		}
+
+		return result.data as VVGroupConfig
+	}
+
+	/**
+	 * 初始化分组 Token（如果分组没有 apiKey 则调用此接口）
+	 * @param accessToken 访问令牌
+	 * @param userId 用户 ID
+	 * @returns 初始化后的分组配置列表
+	 */
+	async initGroupTokens(accessToken: string, userId: number): Promise<VVGroupConfig> {
+		const response = await fetch(`${this.apiBaseUrl}/oauth/vscode/init_group_tokens`, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				"New-Api-User": userId.toString(),
+				"Content-Type": "application/json",
+			},
+		})
+
+		if (!response.ok) {
+			const errorText = await response.text()
+			throw new Error(`Failed to init group tokens: ${errorText}`)
+		}
+
+		const result = await response.json()
+		if (!result.success) {
+			throw new Error(result.message || "Failed to init group tokens")
+		}
+
+		return result.data as VVGroupConfig
 	}
 }
 

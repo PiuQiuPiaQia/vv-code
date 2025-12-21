@@ -132,6 +132,10 @@ if (production) {
 	// IS_DEV is always disable in production builds.
 	buildEnvVars["process.env.IS_DEV"] = "false"
 }
+// VVCode: 开发环境 base URL
+if (process.env.DEV_BASE_URL) {
+	buildEnvVars["process.env.DEV_BASE_URL"] = JSON.stringify(process.env.DEV_BASE_URL)
+}
 // Set the environment and telemetry env vars. The API key env vars need to be populated in the GitHub
 // workflows from the secrets.
 if (process.env.CLINE_ENVIRONMENT) {

@@ -1,4 +1,5 @@
 import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { useState } from "react"
 import { useDebouncedInput } from "../utils/useDebouncedInput"
 
 /**
@@ -25,18 +26,40 @@ export const ApiKeyField = ({
 	helpText,
 }: ApiKeyFieldProps) => {
 	const [localValue, setLocalValue] = useDebouncedInput(initialValue, onChange)
+	const [showKey, setShowKey] = useState(false)
 
 	return (
 		<div>
-			<VSCodeTextField
-				onInput={(e: any) => setLocalValue(e.target.value)}
-				placeholder={placeholder}
-				required={true}
-				style={{ width: "100%" }}
-				type="password"
-				value={localValue}>
-				<span style={{ fontWeight: 500 }}>{providerName} API Key</span>
-			</VSCodeTextField>
+			<div style={{ position: "relative" }}>
+				<VSCodeTextField
+					onInput={(e: any) => setLocalValue(e.target.value)}
+					placeholder={placeholder}
+					required={true}
+					style={{ width: "100%" }}
+					type={showKey ? "text" : "password"}
+					value={localValue}>
+					<span style={{ fontWeight: 500 }}>{providerName} API Key</span>
+				</VSCodeTextField>
+				{localValue && (
+					<button
+						onClick={() => setShowKey(!showKey)}
+						style={{
+							position: "absolute",
+							right: "8px",
+							top: "50%",
+							transform: "translateY(-50%)",
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							padding: "4px",
+							color: "var(--vscode-descriptionForeground)",
+						}}
+						title={showKey ? "隐藏" : "显示"}
+						type="button">
+						<span className={`codicon codicon-${showKey ? "eye-closed" : "eye"}`}></span>
+					</button>
+				)}
+			</div>
 			<p
 				style={{
 					fontSize: "12px",

@@ -62,6 +62,7 @@ export interface GlobalState {
 	// VVCode Customization: VVCode 用户信息
 	vvUserInfo: VVUserInfo | undefined
 	vvUserConfig: VVUserConfig | undefined
+	vvGroupConfig: VVGroupConfig | undefined // VVCode 分组配置
 	// VVCode Customization: 临时认证数据（仅在认证流程中使用）
 	"vv:authState": string | undefined
 	"vv:codeVerifier": string | undefined
@@ -85,6 +86,23 @@ export interface VVUserConfig {
 	features?: string[]
 	apiBaseUrl?: string
 }
+
+// VVCode Customization: 分组类型枚举
+export type VVGroupType = "discount" | "daily" | "performance"
+
+// VVCode Customization: 分组配置项
+export interface VVGroupItem {
+	type: VVGroupType
+	name: string // 显示名称（中文）
+	defaultModelId: string // 默认模型 ID
+	apiProvider: string // API Provider（如 "ANTHROPIC"）
+	apiKey: string // API Key（未配置时为空字符串）
+	apiBaseUrl?: string // 可选：自定义端点
+	isDefault: boolean // 是否为默认分组
+}
+
+// VVCode Customization: 分组配置列表
+export type VVGroupConfig = VVGroupItem[]
 
 export interface Settings {
 	awsRegion: string | undefined

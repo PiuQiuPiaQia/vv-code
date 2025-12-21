@@ -1,5 +1,6 @@
 import { BooleanRequest, EmptyRequest } from "@shared/proto/cline/common"
 import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { ExternalLinkIcon } from "lucide-react"
 import { memo, useEffect, useState } from "react"
 import ClineLogoWhite from "@/assets/ClineLogoWhite"
 import ApiOptions from "@/components/settings/ApiOptions"
@@ -8,14 +9,20 @@ import { useVVAuth } from "@/hooks/useVVAuth"
 import { AccountServiceClient, StateServiceClient } from "@/services/grpc-client"
 import { validateApiConfiguration } from "@/utils/validate"
 
+// VVCode 创建 Token 页面地址
+const VV_CREATE_TOKEN_URL = "https://vvcode.top/console/start"
+
 const WelcomeView = memo(() => {
-	const { apiConfiguration, mode } = useExtensionState()
+	const { apiConfiguration, mode, vvGroupConfig } = useExtensionState()
 	const [apiErrorMessage, setApiErrorMessage] = useState<string | undefined>(undefined)
 	const [showApiOptions, setShowApiOptions] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
 
 	// VVCode Customization: 添加 VV 认证
 	const { isAuthenticated: isVVAuthenticated, isLoggingIn: isVVLoggingIn, login: vvLogin } = useVVAuth()
+
+	// VVCode: 检查是否有 apiKey
+	const hasApiKey = vvGroupConfig?.some((g) => g.apiKey) ?? false
 
 	const disableLetsGoButton = apiErrorMessage != null
 
@@ -45,12 +52,12 @@ const WelcomeView = memo(() => {
 		setApiErrorMessage(validateApiConfiguration(mode, apiConfiguration))
 	}, [apiConfiguration, mode])
 
-	// VVCode Customization: 如果已登录 VV，自动完成欢迎流程
+	// VVCode Customization: 如果已登录 VV 且有 apiKey，自动完成欢迎流程
 	useEffect(() => {
-		if (isVVAuthenticated) {
+		if (isVVAuthenticated && hasApiKey) {
 			handleSubmit()
 		}
-	}, [isVVAuthenticated])
+	}, [isVVAuthenticated, hasApiKey])
 
 	return (
 		<div className="fixed inset-0 p-0 flex flex-col">
@@ -74,15 +81,33 @@ const WelcomeView = memo(() => {
 					Sonnet.
 				</p>
 
-				{/* VVCode Customization: VVCode 登录按钮 */}
-				<VSCodeButton appearance="primary" className="w-full mt-1" disabled={isVVLoggingIn} onClick={handleVVLogin}>
-					{isVVLoggingIn ? "正在跳转浏览器..." : "使用 VVCode 账号登录"}
-					{isVVLoggingIn && (
-						<span className="ml-1 animate-spin">
-							<span className="codicon codicon-refresh"></span>
-						</span>
-					)}
-				</VSCodeButton>
+				{/* VVCode Customization: 已登录但没有 apiKey，显示创建 Token 引导 */}
+				{isVVAuthenticated && !hasApiKey && (
+					<div className="mt-2 p-3 rounded border border-[var(--vscode-charts-orange)] bg-[var(--vscode-inputValidation-warningBackground)]">
+						<p className="text-sm mb-2">您已登录 VVCode，但还没有创建 API Token。请点击下方按钮前往创建：</p>
+						<VSCodeButton
+							appearance="primary"
+							className="w-full"
+							onClick={() => window.open(VV_CREATE_TOKEN_URL, "_blank")}>
+							<span className="flex items-center gap-1">
+								创建 API Token
+								<ExternalLinkIcon size={14} />
+							</span>
+						</VSCodeButton>
+					</div>
+				)}
+
+				{/* VVCode Customization: VVCode 登录按钮 - 未登录时显示 */}
+				{!isVVAuthenticated && (
+					<VSCodeButton appearance="primary" className="w-full mt-1" disabled={isVVLoggingIn} onClick={handleVVLogin}>
+						{isVVLoggingIn ? "正在跳转浏览器..." : "使用 VVCode 账号登录"}
+						{isVVLoggingIn && (
+							<span className="ml-1 animate-spin">
+								<span className="codicon codicon-refresh"></span>
+							</span>
+						)}
+					</VSCodeButton>
+				)}
 
 				<VSCodeButton appearance="secondary" className="w-full mt-1" disabled={isLoading} onClick={handleLogin}>
 					Get Started for Free (Cline Official)

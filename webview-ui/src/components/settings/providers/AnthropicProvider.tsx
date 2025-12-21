@@ -42,8 +42,10 @@ export const AnthropicProvider = ({ showModelOptions, isPopup, currentMode }: An
 	// Get the normalized configuration
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
 
-	// 默认的 Base URL
-	const defaultBaseUrl = "http://vvcode.top/"
+	// 默认的 Base URL（开发环境从环境变量获取）
+	const isDev = process.env.IS_DEV === '"true"'
+	const devBaseUrl = process.env.DEV_BASE_URL || "http://127.0.0.1:3000/"
+	const defaultBaseUrl = isDev ? devBaseUrl : "http://vvcode.top/"
 	const currentBaseUrl = apiConfiguration?.anthropicBaseUrl || defaultBaseUrl
 
 	// Helper function for model switching

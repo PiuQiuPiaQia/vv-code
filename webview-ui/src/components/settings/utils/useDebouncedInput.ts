@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useDebounceEffect } from "@/utils/useDebounceEffect"
 
 /**
@@ -15,17 +15,39 @@ export function useDebouncedInput<T>(
 	onChange: (value: T) => void,
 	debounceMs: number = 100,
 ): [T, (value: T) => void] {
-	// Local state to prevent jumpy input - initialize once
+	// Local state to prevent jumpy input
 	const [localValue, setLocalValue] = useState(initialValue)
+	// Track the last known external value to detect external changes
+	const lastExternalValueRef = useRef(initialValue)
+	// Track if user has made changes
+	const userChangedRef = useRef(false)
 
-	// Debounced backend save - saves after user stops changing value
+	// Sync with external value changes (e.g., when switching groups)
+	useEffect(() => {
+		if (initialValue !== lastExternalValueRef.current) {
+			lastExternalValueRef.current = initialValue
+			setLocalValue(initialValue)
+			userChangedRef.current = false
+		}
+	}, [initialValue])
+
+	// Wrapper to mark user edits
+	const handleSetValue = (value: T) => {
+		userChangedRef.current = true
+		setLocalValue(value)
+	}
+
+	// Debounced backend save - only saves if user made changes
 	useDebounceEffect(
 		() => {
-			onChange(localValue)
+			// Only save if user changed the value AND it's different from external value
+			if (userChangedRef.current && localValue !== lastExternalValueRef.current) {
+				onChange(localValue)
+			}
 		},
 		debounceMs,
 		[localValue],
 	)
 
-	return [localValue, setLocalValue]
+	return [localValue, handleSetValue]
 }

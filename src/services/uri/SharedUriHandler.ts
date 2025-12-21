@@ -95,6 +95,12 @@ export class SharedUriHandler {
 					Logger.warn("SharedUriHandler: Missing code or state parameter for VVCode auth callback")
 					return false
 				}
+				// VVCode: 后台初始化完成回调，刷新分组配置
+				case "/init-complete": {
+					Logger.info("SharedUriHandler: VVCode init-complete callback received")
+					await visibleWebview.controller.handleVVInitComplete()
+					return true
+				}
 				case "/task": {
 					const prompt = query.get("prompt")
 					if (prompt) {

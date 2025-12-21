@@ -3,7 +3,7 @@
 
 import type { Controller } from "@/core/controller"
 import type { StreamingResponseHandler } from "@/core/controller/grpc-handler"
-import type { VVUserConfig, VVUserInfo } from "@/shared/storage/state-keys"
+import type { VVGroupConfig, VVGroupItem, VVUserConfig, VVUserInfo } from "@/shared/storage/state-keys"
 import { generateCodeChallenge, generateCodeVerifier, generateState } from "@/shared/vv-crypto"
 import { openExternal } from "@/utils/env"
 import { type VVAuthInfo, VVAuthProvider } from "./providers/VVAuthProvider"
@@ -37,6 +37,7 @@ export class VVAuthService {
 	private constructor() {
 		// 检测开发环境（通过 IS_DEV 环境变量）
 		const isDevelopment = process.env.IS_DEV === "true" || process.env.VV_API_BASE_URL !== undefined
+		const devBaseUrl = process.env.DEV_BASE_URL || "http://127.0.0.1:3000"
 
 		// 支持通过环境变量自定义 API 地址
 		if (process.env.VV_API_BASE_URL) {
@@ -44,8 +45,8 @@ export class VVAuthService {
 			this.AUTH_PAGE_URL = `${process.env.VV_API_BASE_URL.replace("/api", "")}/oauth/vscode/login`
 		} else if (isDevelopment) {
 			// 开发环境默认使用本地地址
-			this.API_BASE_URL = "http://127.0.0.1:5173/api"
-			this.AUTH_PAGE_URL = "http://127.0.0.1:5173/oauth/vscode/login"
+			this.API_BASE_URL = `${devBaseUrl}/api`
+			this.AUTH_PAGE_URL = `${devBaseUrl}/oauth/vscode/login`
 		} else {
 			// 生产环境
 			this.API_BASE_URL = "https://vvcode.top/api"
@@ -70,6 +71,10 @@ export class VVAuthService {
 			VVAuthService.instance = new VVAuthService()
 		}
 		VVAuthService.instance._controller = controller
+
+		// 如果用户已登录，主动获取分组配置
+		VVAuthService.instance.initGroupConfigIfAuthenticated()
+
 		return VVAuthService.instance
 	}
 
@@ -102,6 +107,22 @@ export class VVAuthService {
 		const controller = this.requireController()
 		const accessToken = controller.stateManager.getSecretKey("vv:accessToken")
 		return !!accessToken
+	}
+
+	/**
+	 * 初始化时检查登录状态并获取分组配置
+	 */
+	private async initGroupConfigIfAuthenticated(): Promise<void> {
+		if (!this.isAuthenticated) {
+			return
+		}
+
+		try {
+			await this.refreshGroupConfig()
+			console.log("[VVAuth] Group config initialized on startup")
+		} catch (error) {
+			console.warn("[VVAuth] Failed to init group config on startup:", error)
+		}
 	}
 
 	/**
@@ -211,18 +232,32 @@ export class VVAuthService {
 				console.warn("[VVAuth] Failed to fetch user config:", error)
 			}
 
-			// 7. 立即持久化用户数据
+			// 7. 获取分组配置并自动应用默认分组
+			try {
+				const groupConfig = await this._provider.getGroupTokens(authInfo.accessToken, authInfo.userId)
+				controller.stateManager.setGlobalState("vvGroupConfig", groupConfig)
+
+				// 自动应用默认分组的 API Key
+				const defaultGroup = groupConfig.find((g) => g.isDefault)
+				if (defaultGroup && defaultGroup.apiKey) {
+					await this.applyGroupConfig(defaultGroup)
+				}
+			} catch (error) {
+				console.warn("[VVAuth] Failed to fetch group config:", error)
+			}
+
+			// 8. 立即持久化用户数据
 			await controller.stateManager.flushPendingState()
 
-			// 8. 清理临时存储
+			// 9. 清理临时存储
 			controller.stateManager.setGlobalState("vv:authState", undefined)
 			controller.stateManager.setGlobalState("vv:codeVerifier", undefined)
 			await controller.stateManager.flushPendingState()
 
-			// 9. 记录已处理的授权码
+			// 10. 记录已处理的授权码
 			this._lastProcessedCode = code
 
-			// 10. 更新认证状态并广播
+			// 11. 更新认证状态并广播
 			this._authenticated = true
 			this.sendAuthStatusUpdate()
 		} catch (error) {
@@ -343,6 +378,99 @@ export class VVAuthService {
 	public getUserConfig(): VVUserConfig | undefined {
 		const controller = this.requireController()
 		return controller.stateManager.getGlobalStateKey("vvUserConfig")
+	}
+
+	/**
+	 * 获取分组配置
+	 */
+	public getGroupConfig(): VVGroupConfig | undefined {
+		const controller = this.requireController()
+		return controller.stateManager.getGlobalStateKey("vvGroupConfig")
+	}
+
+	/**
+	 * 切换分组
+	 * @param groupType 分组类型（discount、daily、performance）
+	 */
+	public async switchGroup(groupType: string): Promise<void> {
+		const controller = this.requireController()
+		const groupConfig = controller.stateManager.getGlobalStateKey("vvGroupConfig")
+
+		if (!groupConfig) {
+			throw new Error("Group config not found. Please login first.")
+		}
+
+		const targetGroup = groupConfig.find((g) => g.type === groupType)
+		if (!targetGroup) {
+			throw new Error(`Group "${groupType}" not found`)
+		}
+
+		if (!targetGroup.apiKey) {
+			throw new Error(`Group "${groupType}" has no API key configured. Please configure it first.`)
+		}
+
+		// 更新 isDefault 标记
+		const updatedConfig = groupConfig.map((g) => ({
+			...g,
+			isDefault: g.type === groupType,
+		}))
+		controller.stateManager.setGlobalState("vvGroupConfig", updatedConfig)
+
+		// 应用分组配置
+		await this.applyGroupConfig(targetGroup)
+
+		// 持久化并广播状态更新
+		await controller.stateManager.flushPendingState()
+		this.sendAuthStatusUpdate()
+	}
+
+	/**
+	 * 应用分组配置到 API 设置
+	 * @param group 分组配置
+	 */
+	private async applyGroupConfig(group: VVGroupItem): Promise<void> {
+		const controller = this.requireController()
+		const isDev = process.env.IS_DEV === "true"
+		const devBaseUrl = process.env.DEV_BASE_URL || "http://127.0.0.1:3000"
+
+		// 设置 Anthropic API Key
+		controller.stateManager.setSecret("apiKey", group.apiKey)
+
+		// 设置默认模型（Plan 和 Act 模式都使用相同的模型）
+		controller.stateManager.setGlobalState("planModeApiModelId", group.defaultModelId)
+		controller.stateManager.setGlobalState("actModeApiModelId", group.defaultModelId)
+
+		// 设置 baseUrl（开发环境强制使用本地地址）
+		const baseUrl = isDev ? devBaseUrl : group.apiBaseUrl
+		if (baseUrl) {
+			controller.stateManager.setGlobalState("anthropicBaseUrl", baseUrl)
+		}
+
+		// 立即刷新状态确保生效
+		await controller.stateManager.flushPendingState()
+	}
+
+	/**
+	 * 刷新分组配置
+	 */
+	public async refreshGroupConfig(): Promise<VVGroupConfig | undefined> {
+		const controller = this.requireController()
+		const accessToken = controller.stateManager.getSecretKey("vv:accessToken")
+		const userId = controller.stateManager.getSecretKey("vv:userId")
+
+		if (!accessToken || !userId) {
+			return undefined
+		}
+
+		try {
+			const groupConfig = await this._provider.getGroupTokens(accessToken, parseInt(userId, 10))
+			controller.stateManager.setGlobalState("vvGroupConfig", groupConfig)
+			await controller.stateManager.flushPendingState()
+			return groupConfig
+		} catch (error) {
+			console.error("[VVAuth] Failed to refresh group config:", error)
+			return undefined
+		}
 	}
 }
 

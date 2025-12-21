@@ -8,7 +8,7 @@ import { convertApiConfigurationToProto } from "@shared/proto-conversions/models
 import { type SlashCommand } from "@shared/slashCommands"
 import { Mode } from "@shared/storage/types"
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
-import { AtSignIcon, PlusIcon } from "lucide-react"
+import { AtSignIcon, PlusIcon, SettingsIcon } from "lucide-react"
 import type React from "react"
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import DynamicTextArea from "react-textarea-autosize"
@@ -16,7 +16,6 @@ import { useWindowSize } from "react-use"
 import styled from "styled-components"
 import ContextMenu from "@/components/chat/ContextMenu"
 import { CHAT_CONSTANTS } from "@/components/chat/chat-view/constants"
-import ModelPickerModal from "@/components/chat/ModelPickerModal"
 import SlashCommandMenu from "@/components/chat/SlashCommandMenu"
 import { CODE_BLOCK_BG_COLOR } from "@/components/common/CodeBlock"
 import Thumbnails from "@/components/common/Thumbnails"
@@ -52,6 +51,7 @@ import { validateApiConfiguration, validateModelId } from "@/utils/validate"
 import ClineRulesToggleModal from "../cline-rules/ClineRulesToggleModal"
 import ServersToggleModal from "./ServersToggleModal"
 import VoiceRecorder from "./VoiceRecorder"
+import { VVGroupSelector } from "./VVGroupSelector"
 
 const { MAX_IMAGES_AND_FILES_PER_MESSAGE } = CHAT_CONSTANTS
 
@@ -146,6 +146,12 @@ const ButtonContainer = styled.div`
 	min-width: 0;
 	width: 100%;
 `
+
+// Update TypeScript interface for styled-component props
+interface ModelSelectorTooltipProps {
+	arrowPosition: number
+	menuPosition: number
+}
 
 const ModelSelectorTooltip = styled.div<ModelSelectorTooltipProps>`
 	position: fixed;
@@ -273,6 +279,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			showChatModelSelector: showModelSelector,
 			setShowChatModelSelector: setShowModelSelector,
 			dictationSettings,
+			navigateToSettings,
 		} = useExtensionState()
 		const { clineUser } = useClineAuth()
 		const [isTextAreaFocused, setIsTextAreaFocused] = useState(false)
@@ -306,7 +313,6 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		const [menuPosition, setMenuPosition] = useState(0)
 		const [shownTooltipMode, setShownTooltipMode] = useState<Mode | null>(null)
 		const [pendingInsertions, setPendingInsertions] = useState<string[]>([])
-		const _shiftHoldTimerRef = useRef<NodeJS.Timeout | null>(null)
 		const [showUnsupportedFileError, setShowUnsupportedFileError] = useState(false)
 		const unsupportedFileTimerRef = useRef<NodeJS.Timeout | null>(null)
 		const [showDimensionError, setShowDimensionError] = useState(false)
@@ -1745,6 +1751,24 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 							<ClineRulesToggleModal />
 
+							<VVGroupSelector />
+
+							{/* Cline 设置入口 */}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<VSCodeButton
+										appearance="icon"
+										aria-label="Cline Settings"
+										onClick={() => navigateToSettings()}>
+										<ButtonContainer>
+											<SettingsIcon size={13} />
+										</ButtonContainer>
+									</VSCodeButton>
+								</TooltipTrigger>
+								<TooltipContent side="top">Cline Settings</TooltipContent>
+							</Tooltip>
+
+							{/* VVCode: 旧的模型选择入口，已注释
 							<ModelContainer ref={modelSelectorRef}>
 								<ModelPickerModal
 									currentMode={mode}
@@ -1763,6 +1787,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 									</ModelButtonWrapper>
 								</ModelPickerModal>
 							</ModelContainer>
+							*/}
 						</ButtonGroup>
 					</div>
 					{/* Tooltip for Plan/Act toggle remains outside the conditional rendering */}
@@ -1800,11 +1825,5 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		)
 	},
 )
-
-// Update TypeScript interface for styled-component props
-interface ModelSelectorTooltipProps {
-	arrowPosition: number
-	menuPosition: number
-}
 
 export default ChatTextArea

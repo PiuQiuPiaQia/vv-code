@@ -1,4 +1,5 @@
 import { ANTHROPIC_MIN_THINKING_BUDGET, ApiProvider, fireworksDefaultModelId, type OcaModelInfo } from "@shared/api"
+import { API_BASE_URL } from "@shared/config/config"
 import { getCachedConfig } from "@shared/config/fetcher"
 import { GlobalStateAndSettings, LocalState, SecretKey, Secrets } from "@shared/storage/state-keys"
 import { ExtensionContext } from "vscode"
@@ -228,8 +229,11 @@ export async function readGlobalStateFromDisk(context: ExtensionContext): Promis
 			context.globalState.get<GlobalStateAndSettings["ollamaApiOptionsCtxNum"]>("ollamaApiOptionsCtxNum")
 		const lmStudioBaseUrl = context.globalState.get<GlobalStateAndSettings["lmStudioBaseUrl"]>("lmStudioBaseUrl")
 		const lmStudioMaxTokens = context.globalState.get<GlobalStateAndSettings["lmStudioMaxTokens"]>("lmStudioMaxTokens")
-		const anthropicBaseUrl =
-			context.globalState.get<GlobalStateAndSettings["anthropicBaseUrl"]>("anthropicBaseUrl") || defaultBaseUrl
+		// 开发环境强制使用本地地址
+		const isDev = process.env.IS_DEV === "true"
+		const anthropicBaseUrl = isDev
+			? API_BASE_URL
+			: context.globalState.get<GlobalStateAndSettings["anthropicBaseUrl"]>("anthropicBaseUrl") || defaultBaseUrl
 		const geminiBaseUrl = context.globalState.get<GlobalStateAndSettings["geminiBaseUrl"]>("geminiBaseUrl")
 		const azureApiVersion = context.globalState.get<GlobalStateAndSettings["azureApiVersion"]>("azureApiVersion")
 		const openRouterProviderSorting =
@@ -746,6 +750,7 @@ export async function readGlobalStateFromDisk(context: ExtensionContext): Promis
 			// VVCode Customization: VVCode 用户信息
 			vvUserInfo: context.globalState.get<GlobalStateAndSettings["vvUserInfo"]>("vvUserInfo"),
 			vvUserConfig: context.globalState.get<GlobalStateAndSettings["vvUserConfig"]>("vvUserConfig"),
+			vvGroupConfig: context.globalState.get<GlobalStateAndSettings["vvGroupConfig"]>("vvGroupConfig"),
 			// VVCode Customization: 临时认证数据
 			"vv:authState": context.globalState.get<GlobalStateAndSettings["vv:authState"]>("vv:authState"),
 			"vv:codeVerifier": context.globalState.get<GlobalStateAndSettings["vv:codeVerifier"]>("vv:codeVerifier"),

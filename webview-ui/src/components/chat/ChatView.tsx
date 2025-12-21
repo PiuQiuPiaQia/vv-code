@@ -10,9 +10,7 @@ import { useCallback, useEffect, useMemo } from "react"
 import { useMount } from "react-use"
 import { normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
 import { useExtensionState } from "@/context/ExtensionStateContext"
-import { useShowNavbar } from "@/context/PlatformContext"
 import { FileServiceClient, UiServiceClient } from "@/services/grpc-client"
-import { Navbar } from "../menu/Navbar"
 import VVWelcomeView from "../onboarding/VVWelcomeView"
 import AutoApproveBar from "./auto-approve-menu/AutoApproveBar"
 // Import utilities and hooks from the new structure
@@ -39,7 +37,6 @@ interface ChatViewProps {
 const MAX_IMAGES_AND_FILES_PER_MESSAGE = CHAT_CONSTANTS.MAX_IMAGES_AND_FILES_PER_MESSAGE
 
 const ChatView = ({ isHidden }: ChatViewProps) => {
-	const showNavbar = useShowNavbar()
 	const { clineMessages: messages, apiConfiguration, mode, currentFocusChainChecklist, hooksEnabled } = useExtensionState()
 
 	//const task = messages.length > 0 ? (messages[0].say === "task" ? messages[0] : undefined) : undefined) : undefined
@@ -322,7 +319,6 @@ const ChatView = ({ isHidden }: ChatViewProps) => {
 	return (
 		<ChatLayout isHidden={isHidden}>
 			<div className="flex flex-col flex-1 overflow-hidden">
-				{showNavbar && <Navbar />}
 				{task ? (
 					<TaskSection
 						apiMetrics={apiMetrics}

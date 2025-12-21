@@ -3,6 +3,7 @@
 // Modified: 2025-12-20
 
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { useCallback, useRef } from "react"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { useVVAuth } from "@/hooks/useVVAuth"
 import { getEnvironmentColor } from "@/utils/environmentColors"
@@ -15,8 +16,26 @@ interface VVSettingsViewProps {
  * VV 自定义设置页面
  */
 const VVSettingsView = ({ onDone }: VVSettingsViewProps) => {
-	const { environment } = useExtensionState()
+	const { environment, navigateToSettings } = useExtensionState()
 	const { user, isAuthenticated, logout } = useVVAuth()
+	const clickCountRef = useRef(0)
+	const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	// 连点5下用户名打开Cline设置
+	const handleUsernameClick = useCallback(() => {
+		clickCountRef.current += 1
+		if (clickTimerRef.current) {
+			clearTimeout(clickTimerRef.current)
+		}
+		if (clickCountRef.current >= 5) {
+			clickCountRef.current = 0
+			navigateToSettings()
+		} else {
+			clickTimerRef.current = setTimeout(() => {
+				clickCountRef.current = 0
+			}, 500)
+		}
+	}, [navigateToSettings])
 
 	return (
 		<div className="fixed overflow-hidden inset-0 flex flex-col">
@@ -48,8 +67,11 @@ const VVSettingsView = ({ onDone }: VVSettingsViewProps) => {
 							<div className="p-4 border border-input-border rounded bg-input-background">
 								<div className="flex items-center justify-between">
 									<div>
-										<p className="text-sm font-medium">{user.username}</p>
-										<p className="text-xs text-(--vscode-descriptionForeground)">UID: {user.uid}</p>
+										<p
+											className="text-sm font-medium cursor-pointer select-none"
+											onClick={handleUsernameClick}>
+											{user.username}
+										</p>
 									</div>
 									<VSCodeButton appearance="secondary" onClick={logout}>
 										退出登录

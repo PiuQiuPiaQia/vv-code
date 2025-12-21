@@ -28,7 +28,6 @@ const VVAccountInfoCard = memo(() => {
 					<div className="font-semibold text-base">
 						你好，「{user.username || "用户"}」，我是 VVCode，你的 AI 编程助手，随时为你效劳 ✨
 					</div>
-					<div className="text-xs text-(--vscode-descriptionForeground)">UID: {user.uid}</div>
 				</div>
 			</div>
 
@@ -49,12 +48,6 @@ const VVAccountInfoCard = memo(() => {
 							{user.usedQuota || 0} / {user.quota || 0}
 						</span>
 					</div>
-					{user.vipLevel !== undefined && user.vipLevel > 0 && (
-						<div className="text-xs text-(--vscode-descriptionForeground)">
-							<span className="codicon codicon-star-full mr-1"></span>
-							VIP 等级: {user.vipLevel}
-						</div>
-					)}
 				</div>
 			)}
 

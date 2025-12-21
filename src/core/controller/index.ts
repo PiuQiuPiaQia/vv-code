@@ -740,6 +740,18 @@ export class Controller {
 		}
 	}
 
+	// VVCode: 后台初始化完成回调，刷新分组配置
+	async handleVVInitComplete() {
+		try {
+			console.log("[VVCode] Init complete callback received, refreshing group config...")
+			await this.vvAuthService.refreshGroupConfig()
+			await this.postStateToWebview()
+			console.log("[VVCode] Group config refreshed successfully")
+		} catch (error) {
+			console.error("[VVCode] Failed to refresh group config:", error)
+		}
+	}
+
 	// Requesty
 
 	async handleRequestyCallback(code: string) {
@@ -984,6 +996,8 @@ export class Controller {
 			subagentsEnabled,
 			nativeToolCallSetting: this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.stateManager.getGlobalSettingsKey("enableParallelToolCalling"),
+			// VVCode Customization: 分组配置
+			vvGroupConfig: this.stateManager.getGlobalStateKey("vvGroupConfig"),
 		}
 	}
 

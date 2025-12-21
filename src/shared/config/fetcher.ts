@@ -7,7 +7,9 @@
 
 import axios from "axios"
 import { getAxiosSettings } from "@/shared/net"
-import { CONFIG_ENDPOINT, CONFIG_FETCH_TIMEOUT } from "./config"
+import { API_BASE_URL, CONFIG_ENDPOINT, CONFIG_FETCH_TIMEOUT } from "./config"
+
+const isDev = process.env.IS_DEV === "true"
 
 /**
  * Configuration response schema from the remote API
@@ -66,6 +68,7 @@ async function fetchRemoteConfig(): Promise<DynamicConfigResponse | null> {
 
 /**
  * Resolves the final configuration from remote config (no local fallback)
+ * 开发环境下强制使用本地地址
  *
  * @param remoteConfig The configuration fetched from remote endpoint
  * @returns ResolvedConfig The configuration (values may be undefined if not provided by API)
@@ -74,7 +77,7 @@ function resolveConfig(remoteConfig: DynamicConfigResponse | null): ResolvedConf
 	return {
 		anthropic: {
 			apiKey: remoteConfig?.anthropic?.apiKey,
-			baseUrl: remoteConfig?.anthropic?.baseUrl,
+			baseUrl: isDev ? API_BASE_URL : remoteConfig?.anthropic?.baseUrl,
 		},
 	}
 }

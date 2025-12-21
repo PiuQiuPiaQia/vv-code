@@ -27,6 +27,12 @@ service VVAccountService {
 
   // 获取用户配置（可选）
   rpc vvGetUserConfig(EmptyRequest) returns (VVUserConfig);
+
+  // 切换分组
+  rpc vvSwitchGroup(String) returns (Empty);
+
+  // 刷新分组配置
+  rpc vvRefreshGroupConfig(EmptyRequest) returns (Empty);
 }
 
 // VVCode 认证状态
