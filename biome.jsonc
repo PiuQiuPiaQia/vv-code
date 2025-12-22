@@ -72,6 +72,9 @@
 				"noArrayIndexKey": "info",
 				"noAssignInExpressions": "info"
 			},
+			"nursery": {
+				"useIterableCallbackReturn": "off"
+			},
 			"complexity": {
 				"noUselessConstructor": "off",
 				"useOptionalChain": "off",
@@ -109,6 +112,14 @@
 		"formatter": {
 			"trailingCommas": "none",
 			"expand": "always"
+		}
+	},
+	"css": {
+		"parser": {
+			"cssModules": true
+		},
+		"linter": {
+			"enabled": false
 		}
 	},
 	"files": {
