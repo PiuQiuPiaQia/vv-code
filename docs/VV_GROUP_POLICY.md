@@ -78,7 +78,7 @@ Headers:
       "type": "discount",
       "name": "经济模式",
       "api_key": "sk-xxx",
-      "api_base_url": "http://vvcode.top",
+      "api_base_url": "https://vvcode.top",
       "default_model_id": "claude-3-5-sonnet-20241022",
       "is_default": true
     },
@@ -86,7 +86,7 @@ Headers:
       "type": "performance",
       "name": "性能模式",
       "api_key": "sk-yyy",
-      "api_base_url": "http://vvcode.top",
+      "api_base_url": "https://vvcode.top",
       "default_model_id": "claude-sonnet-4-20250514",
       "is_default": false
     }
