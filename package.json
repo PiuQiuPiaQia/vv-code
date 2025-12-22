@@ -2,7 +2,7 @@
 	"name": "vvcode",
 	"displayName": "VVCode",
 	"description": "AI-powered coding assistant based on Cline. Autonomous agent capable of creating/editing files, running commands, using the browser, and more with your permission every step of the way.",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"icon": "assets/icons/icon.png",
 	"engines": {
 		"vscode": "^1.84.0"
